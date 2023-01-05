@@ -40,8 +40,7 @@ dependencies:
   # the following line of code enables you to pick files from your local
   # library to add to your application
   file_picker: ^5.2.4
-  # enables you to view your pdf you picked
-  advance_pdf_viewer: ^2.0.1
+  pdfx: ^2.3.0
 
 dev_dependencies:
   flutter_test:

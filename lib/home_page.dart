@@ -12,6 +12,8 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  List<String> fileAccessed = [];
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -20,7 +22,27 @@ class _HomePageState extends State<HomePage> {
         centerTitle: true,
       ),
       body: Container(
-        child: ListView(),
+        child: ListView.builder(
+          itemCount: fileAccessed.length,
+            itemBuilder: (context, index){
+              String fileAccessedPath = fileAccessed[index];
+              return Card(
+                child: GestureDetector(
+                  onTap: (){
+                    openReaderPage(context, File(fileAccessedPath));
+                  },
+                  child: Container(
+                    padding: EdgeInsets.all(5),
+                    child: Text(
+                        " ${fileAccessedPath.split("/").last}",//-this gets file name
+                      style: Theme.of(context).textTheme.headline6,
+                    ),
+                  ),
+                ),
+
+              );
+            }
+        ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
@@ -41,11 +63,22 @@ class _HomePageState extends State<HomePage> {
     if(result != null){
       // User selected the file
       //create file instance
-      File docFile = File(result.files[0].path!);
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context)=>ReaderPage(document : docFile))
-      );
+      String path = result.files[0].path!;
+      File docFile = File(path);
+
+      openReaderPage(context, docFile);
+
+      setState(() {
+        if(!fileAccessed.contains(path)){
+          //add file to list of file accessed
+          fileAccessed.add(path);
+        }else{
+          //brings the chosen file if already existed to the top
+          var pathIndex = fileAccessed.indexOf(path);
+          String existingPath = fileAccessed.removeAt(pathIndex);
+          fileAccessed.add(existingPath);
+        }
+      });
     }else{
       //user cancelled selection
       ScaffoldMessenger.of(context).showSnackBar(
@@ -53,5 +86,13 @@ class _HomePageState extends State<HomePage> {
           )
       );
     }
+  }
+
+  void openReaderPage(BuildContext context, File docFile) {
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context)=>ReaderPage(document : docFile))
+    );
   }
 }
