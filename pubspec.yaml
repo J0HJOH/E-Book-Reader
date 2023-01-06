@@ -41,6 +41,8 @@ dependencies:
   # library to add to your application
   file_picker: ^5.2.4
   pdfx: ^2.3.0
+  shared_preferences: ^2.0.15
+
 
 dev_dependencies:
   flutter_test:

@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:my_e_book_reader/file_repository.dart';
 import 'package:my_e_book_reader/reader.dart';
 
 class HomePage extends StatefulWidget {
@@ -12,6 +13,7 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  var  fileRepo = FileRepository();
   List<String> fileAccessed = [];
 
   @override
@@ -21,28 +23,43 @@ class _HomePageState extends State<HomePage> {
         title: Text("My E-Book Reader"),
         centerTitle: true,
       ),
-      body: Container(
-        child: ListView.builder(
-          itemCount: fileAccessed.length,
-            itemBuilder: (context, index){
-              String fileAccessedPath = fileAccessed[index];
-              return Card(
-                child: GestureDetector(
-                  onTap: (){
-                    openReaderPage(context, File(fileAccessedPath));
-                  },
-                  child: Container(
-                    padding: EdgeInsets.all(5),
-                    child: Text(
-                        " ${fileAccessedPath.split("/").last}",//-this gets file name
-                      style: Theme.of(context).textTheme.headline6,
+      body: FutureBuilder(
+        future:  fileRepo.getFiles(),
+        builder: (context, snapshot){
+          if(snapshot.data== null) return CircularProgressIndicator();
+          //assign data to list of fileAccessed
+          fileAccessed = snapshot.data as List<String>;
+          return ListView.builder(
+              itemCount: fileAccessed.length,
+              itemBuilder: (context, index){
+                String fileAccessedPath = fileAccessed[index];
+                return Dismissible(
+                  key: Key(fileAccessedPath),
+                  child: Card(
+                    child: GestureDetector(
+                      onTap: (){
+                        openReaderPage(context, File(fileAccessedPath));
+                      },
+                      child: Container(
+                        padding: EdgeInsets.all(5),
+                        child: Text(
+                          " ${fileAccessedPath.split("/").last}",//-this gets file name
+                          style: Theme.of(context).textTheme.headline6,
+                        ),
+                      ),
                     ),
-                  ),
-                ),
 
-              );
-            }
-        ),
+                  ),
+
+                  onDismissed: (dismissDirection) async {
+                    fileAccessed.remove(fileAccessedPath);
+                    await fileRepo.removeFile(fileAccessedPath);
+                    setState(() {});
+                  },
+                );
+              }
+          );
+        },
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
@@ -69,15 +86,9 @@ class _HomePageState extends State<HomePage> {
       openReaderPage(context, docFile);
 
       setState(() {
-        if(!fileAccessed.contains(path)){
-          //add file to list of file accessed
-          fileAccessed.add(path);
-        }else{
-          //brings the chosen file if already existed to the top
-          var pathIndex = fileAccessed.indexOf(path);
-          String existingPath = fileAccessed.removeAt(pathIndex);
-          fileAccessed.add(existingPath);
-        }
+
+        checkExistingFile(path);
+        fileRepo.saveFiles(fileAccessed);
       });
     }else{
       //user cancelled selection
@@ -85,6 +96,18 @@ class _HomePageState extends State<HomePage> {
           SnackBar(content: Text("File Selection cancelled")
           )
       );
+    }
+  }
+
+  void checkExistingFile(String path) {
+     if(!fileAccessed.contains(path)){
+      //add file to list of file accessed
+      fileAccessed.add(path);
+    }else{
+      //brings the chosen file if already existed to the top
+      var pathIndex = fileAccessed.indexOf(path);
+      String existingPath = fileAccessed.removeAt(pathIndex);
+      fileAccessed.add(existingPath);
     }
   }
 
